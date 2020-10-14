@@ -151,6 +151,7 @@ output.kafka:
     ${KAFKA_KEEP_ALIVE:+keep_alive ${KAFKA_KEEP_ALIVE}}
     ${KAFKA_MAX_MESSAGE_BYTES:+max_message_bytes: ${KAFKA_MAX_MESSAGE_BYTES}}
     ${KAFKA_REQUIRE_ACKS:+required_acks: ${KAFKA_REQUIRE_ACKS}}
+    ${KAFKA_COMPRESSION:+compression: ${KAFKA_COMPRESSION}}
 EOF
 }
 
