@@ -4,6 +4,7 @@
   paths:
       - {{ .HostDir }}/{{ .File }}
   scan_frequency: 10s
+  harvester_buffer_size: 1048576
   fields_under_root: true
   {{if .Stdout}}
   docker-json: true
@@ -24,5 +25,7 @@
   close_removed: true
   clean_removed: true
   close_renamed: false
-
+  multiline.pattern: '^[[:space:]]+(at|\.{3})\b|^Caused by:'
+  multiline.negate: false
+  multiline.match: after
 {{end}}
