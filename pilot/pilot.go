@@ -304,7 +304,7 @@ func container(containerJSON *types.ContainerJSON) map[string]string {
 	putIfNotEmpty(c, "k8s_pod_namespace", labels[LABEL_K8S_POD_NAMESPACE])
 	putIfNotEmpty(c, "k8s_container_name", labels[LABEL_K8S_CONTAINER_NAME])
 	putIfNotEmpty(c, "k8s_node_name", NODE_NAME)
-	putIfNotEmpty(c, "docker_container", strings.TrimPrefix(containerJSON.Name, "/"))
+	// putIfNotEmpty(c, "docker_container", strings.TrimPrefix(containerJSON.Name, "/"))
 	extension(c, containerJSON)
 	return c
 }

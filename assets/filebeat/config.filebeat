@@ -32,9 +32,12 @@ logging.level: ${FILEBEAT_LOG_LEVEL:-info}
 logging.metrics.enabled: true
 queue:
   mem:
-    events: 8192
-    flush.min_events: 4096
+    events: ${FILEBEAT_QUEUE_MAX_EVENTS:-8192}
+    flush.min_events: ${FILEBEAT_QUEUE_FLUSH_MIN_EVENTS:-2048}
     flush.timeout: 1s
+processors:
+- drop_fields:
+    fields: [${FILEBEAT_DROP_FIELDS}]
 ${FILEBEAT_MAX_PROCS:+max_procs: ${FILEBEAT_MAX_PROCS}}
 setup.template.name: "${FILEBEAT_INDEX:-filebeat}"
 setup.template.pattern: "${FILEBEAT_INDEX:-filebeat}-*"
