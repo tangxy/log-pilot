@@ -1,0 +1,86 @@
+#!/bin/sh
+
+set -e
+
+FLUENT_BIT_CONFIG=/fluent-bit/etc/fluent-bit.conf
+if [ -f "$FLUENT_BIT_CONFIG" ]; then
+    echo "$FLUENT_BIT_CONFIG has been existed"
+    rm $FLUENT_BIT_CONFIG
+fi
+
+mkdir -p /fluent-bit/etc/conf.d
+
+assert_not_empty() {
+    arg=$1
+    shift
+    if [ -z "$arg" ]; then
+        echo "$@"
+        exit 1
+    fi
+}
+
+cd $(dirname $0)
+
+base() {
+cat >> $FLUENT_BIT_CONFIG << EOF
+@INCLUDE conf.d/*.conf
+[SERVICE]
+    HTTP_Server    On
+    HTTP_Listen    0.0.0.0
+    HTTP_PORT      2020
+    Flush          1
+    Daemon         Off
+    Log_Level      warn
+    Parsers_File   parsers.conf
+EOF
+}
+
+default() {
+echo "use default output"
+cat >> $FLUENT_BIT_CONFIG << EOF
+$(base)
+[OUTPUT]
+    name  stdout
+    match *
+EOF
+}
+
+loki() {
+echo "use loki output"
+assert_not_empty "$LOKI_ENDPOINT" "LOKI_ENDPOINT required"
+
+cat >> $FLUENT_BIT_CONFIG << EOF
+$(base)
+[Output]
+    Name grafana-loki
+    Match ${LOKI_MATCH-*}
+    Url http://${LOKI_ENDPOINT}/api/prom/push
+    ${LOKI_TENANT_ID:+TenantID: ${LOKI_TENANT_ID}}
+    BatchWait 1
+    BatchSize ${LOKI_BATCH_SIZE-1048576}
+    Labels {job="fluent-bit"}
+    LabelMapPath /fluent-bit/etc/labelmap.json
+    RemoveKeys app,index,stage,topic,k8s_container_name,k8s_pod,k8s_pod_namespace
+    AutoKubernetesLabels false
+    LineFormat json
+    LogLevel warn
+EOF
+
+cat >> /fluent-bit/etc/labelmap.json << EOF
+{
+    "index": "stream",
+    "app": "app",
+    "k8s_pod": "instance",
+    "k8s_pod_namespace": "namespace",
+    "k8s_container_name": "container"
+}
+EOF
+
+}
+
+case "$FLUENT_BIT_OUTPUT" in
+    loki)
+        loki;;
+    *)
+        default
+esac

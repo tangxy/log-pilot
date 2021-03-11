@@ -82,7 +82,11 @@ func Run(tpl string, baseDir string) error {
 }
 
 func New(tplStr string, baseDir string) (*Pilot, error) {
-	tpl, err := template.New("pilot").Parse(tplStr)
+	tpl, err := template.New("pilot").Funcs(template.FuncMap{
+		"replace": func (input, from, to string) string {
+			return strings.ReplaceAll(input,from,to)
+		},
+	  }).Parse(tplStr)
 	if err != nil {
 		return nil, err
 	}
@@ -99,6 +103,9 @@ func New(tplStr string, baseDir string) (*Pilot, error) {
 	piloter, _ := NewFluentdPiloter()
 	if os.Getenv(ENV_PILOT_TYPE) == PILOT_FILEBEAT {
 		piloter, _ = NewFilebeatPiloter(baseDir)
+	}
+	if os.Getenv(ENV_PILOT_TYPE) == PILOT_FLUENT_BIT {
+		piloter, _ = NewFluentBitPiloter()
 	}
 
 	logPrefix := []string{"aliyun"}

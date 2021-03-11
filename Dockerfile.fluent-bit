@@ -1,0 +1,22 @@
+FROM golang:1.15-buster as builder
+
+ENV PILOT_DIR /go/src/github.com/AliyunContainerService/log-pilot
+ARG GOOS=linux
+ARG GOARCH=amd64
+WORKDIR $PILOT_DIR
+COPY . $PILOT_DIR
+RUN go install 
+
+FROM harbor.fintech.lakalajr.com/custom/fluent-bit-plugin-loki:2.1.0-amd64 as fluent-loki
+
+FROM harbor.fintech.lakalajr.com/custom/fluent-bit-plugin-loki:2.1.0-amd64-sh
+RUN apt-get update && \ 
+    apt-get install -y --no-install-recommends python lsof curl openssl
+    
+COPY --from=builder /go/bin/log-pilot /pilot/pilot
+COPY assets/entrypoint assets/fluent-bit/ /pilot/
+COPY --from=fluent-loki /fluent-bit/bin/out_grafana_loki.so /fluent-bit/bin/out_grafana_loki.so
+RUN mkdir -p /fluent-bit/etc/conf.d 
+WORKDIR /pilot/
+ENV PILOT_TYPE=fluent-bit
+ENTRYPOINT ["/pilot/entrypoint"]
